@@ -1,5 +1,3 @@
-/* eslint-disable react/jsx-props-no-spreading */
-/* eslint-disable no-shadow */
 import React from 'react';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 
@@ -7,7 +5,9 @@ import './App.css';
 import PropTypes from 'prop-types';
 
 import Home from './containers/Home';
-import Test from './containers/Test';
+import SignIn from './containers/SignIn';
+import SignUp from './containers/SignUp';
+import Check from './containers/Check';
 import Result from './containers/Result';
 
 function App(props) {
@@ -16,11 +16,13 @@ function App(props) {
     <Router history={history}>
       <Switch>
         <Route path="/" exact component={Home} />
-        <Route path="/test/result" exact component={Result} />
+        <Route path="/signin/" exact component={SignIn} />
+        <Route path="/signup/" exact component={SignUp} />
+        <Route path="/check/result" exact component={Result} />
         <Route
-          path="/test/:pid"
+          path="/check/:pid"
           exact
-          render={(props) => <Test {...props} />}
+          render={(props) => <Check {...props} />}
         />
       </Switch>
     </Router>

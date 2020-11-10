@@ -1,62 +1,39 @@
-import json
-from json import JSONDecodeError
-import pickle
-import os
-import numpy as np
-import joblib
-
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponseBadRequest, HttpResponseNotAllowed, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
-from django.conf import settings
+from analysis.models import SolutionReport, UserReport
 
-
-def predict_readability(data, pid):
-    vectorizer = pickle.load(
-        open(str(settings.BASE_DIR) + '/analysis/ML/problem{}/tf-idf_vectorizer.pickle'
-             .format(pid), 'rb'))
-
-    clf_from_joblib = joblib.load(
-        str(settings.BASE_DIR)+'/analysis/ML/problem{}/model_read.pkl'.format(pid))
-
-    predict = int(clf_from_joblib.predict(
-        vectorizer.transform([data]).toarray()))
-
-    probability = float(np.max(clf_from_joblib.predict_proba(
-        vectorizer.transform([data]).toarray())))
-    return (predict, probability)
-
-
-def predict_style(data, pid):
-
-    vectorizer = pickle.load(
-        open(os.getcwd()+'/analysis/ML/problem{}/tf-idf_vectorizer.pickle'.format(pid), 'rb'))
-
-    clf_from_joblib = joblib.load(
-        os.getcwd()+'/analysis/ML/problem{}/model_style.pkl'.format(pid))
-
-    predict = int(clf_from_joblib.predict(
-        vectorizer.transform([data]).toarray()))
-
-    probability = float(np.max(clf_from_joblib.predict_proba(
-        vectorizer.transform([data]).toarray())))
-    return (predict, probability)
-
-
-@ csrf_exempt
-def provide_analysis_result(request):
+def user_report(request):
     if request.method == 'POST':
+        try :
+            solution1 = SolutionReport.objects.filter(author__id=request.user.id,title="ITP1_6_B_report").first().content
+            solution2 = SolutionReport.objects.filter(author__id=request.user.id,title="ITP2_3_B_report").first().content
+        except ObjectDoesNotExist as error:
+            return HttpResponseBadRequest(error)
         try:
-            body = request.body.decode()
-            source_code = json.loads(body)['source_code']
-            elapsed_time = json.loads(body)['elapsed_time']
+            user_report = UserReport(author=request.user, solution1=solution1, solution2=solution2)
         except (KeyError, JSONDecodeError) as error:
-            return HttpResponseBadRequest()
-        predict_read, prob_read = predict_readability(source_code, "ITP1_6_B")
-        predict_st, prob_st = predict_style(source_code, "ITP1_6_B")
-        response_dict = {'readability': predict_read, 'readability_prob': prob_read,
-                         'style': predict_st, 'style_prob': prob_st}
-        return JsonResponse(response_dict, status=200, safe=False)
+            return HttpResponseBadRequest(error)
+        return HttpResponse(status=204)
 
+    else if request.method == 'GET':
+        try :
+            return JsonResponse(UserReport.objects.filter(request.user.id).first().to_dict(), status=200, safe=False)
+        else :
+            return HttpResponseBadRequest()
+    else :
+        return HttpResponseNotAllowed(['UPDATE', 'DELETE'])
+
+    
+
+def single_report(request, report_id):
+    if request.method == 'GET':
+        try:
+            report = SolutionReport.objects.get(pk=report_id)
+
+        except ObjectDoesNotExist:
+            return HttpResponseBadRequest()
+
+        return JsonResponse(report.to_dict(), status=200, safe=False)
     else:
-        return HttpResponseNotAllowed(['GET', 'UPDATE', 'DELETE'])
+        return HttpResponseNotAllowed(['POST', 'UPDATE', 'DELETE'])

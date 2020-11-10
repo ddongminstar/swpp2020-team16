@@ -1,11 +1,12 @@
 import React from 'react';
 import { createMount } from '@material-ui/core/test-utils';
 import { Provider } from 'react-redux';
-import { ConnectedRouter } from 'connected-react-router';
-import Test from './Test';
-import { store, history } from '../store/store';
+import Check from './Check';
+import configureStore from '../configureStore';
 
-describe('<Test/>', () => {
+const { store } = configureStore();
+
+describe('<Check/>', () => {
   let mount;
 
   beforeAll(() => {
@@ -18,9 +19,7 @@ describe('<Test/>', () => {
   it('should render withour any error', () => {
     const component = mount(
       <Provider store={store}>
-        <ConnectedRouter history={history}>
-          <Test match={{ params: { pid: '1' } }} />
-        </ConnectedRouter>
+        <Check match={{ params: { pid: '1' } }} />
       </Provider>,
     );
     const wrapper = component.find('Showprob');
